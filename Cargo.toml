@@ -11,6 +11,9 @@ license = "MPL-2.0"
 
 include = ["src/*.rs", "Cargo.toml"]
 
+[badges]
+travis-ci = { repository = "upsuper/dtoa-short" }
+
 [dependencies]
 dtoa = "0.4.1"
 
