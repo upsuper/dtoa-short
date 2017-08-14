@@ -13,6 +13,7 @@ include = ["src/*.rs", "Cargo.toml"]
 
 [badges]
 travis-ci = { repository = "upsuper/dtoa-short" }
+codecov = { repository = "upsuper/dtoa-short" }
 
 [dependencies]
 dtoa = "0.4.1"
