@@ -6,7 +6,7 @@ extern crate dtoa;
 extern crate dtoa_short;
 extern crate float_cmp;
 
-use dtoa_short::Floating;
+use dtoa_short::{Floating, Notation};
 use float_cmp::ApproxEqUlps;
 use std::ops::Range;
 
@@ -64,22 +64,36 @@ fn generator_correctness() {
     assert_eq!(last, end * 100 - 1);
 }
 
+fn assert_expected_serialization<T: Floating>(value: T, expected: &str) {
+    let mut result = String::new();
+    let notation = dtoa_short::write(&mut result, value).unwrap();
+    assert_eq!(result, expected);
+
+    let exp_pos = expected.find('e');
+    let has_dot = exp_pos.map(|exp_pos| &expected[..exp_pos])
+                         .unwrap_or(expected)
+                         .contains('.');
+    let expected_notation = Notation {
+        decimal_point: has_dot,
+        scientific: exp_pos.is_some(),
+    };
+    assert_eq!(notation, expected_notation);
+}
+
 #[test]
 fn roundtrip_simple_numbers_f32() {
     for s in SimpleNumberGenerator::new(0, 101) {
         let value = s.parse::<f32>().unwrap();
-        let mut result = String::new();
-        dtoa_short::write(&mut result, value).unwrap();
-        assert_eq!(result, s);
+        assert_expected_serialization(value, &s);
     }
 }
 
-fn test_simple_number_percentage_f32<F: FnMut(f32, String)>(mut test: F) {
+fn test_simple_number_percentage_f32<F: FnMut(f32, &str)>(mut test: F) {
     for s in SimpleNumberGenerator::new(0, 101) {
         let value = s.parse::<f32>().unwrap();
         let value = value / 100.;
         let value = value * 100.;
-        test(value, s);
+        test(value, &s);
     }
 }
 
@@ -103,17 +117,7 @@ fn roundtrip_simple_numbers_percentage_dtoa_f32() {
 
 #[test]
 fn roundtrip_simple_numbers_percentage_f32() {
-    test_simple_number_percentage_f32(|value, expected| {
-        let mut result = String::new();
-        dtoa_short::write(&mut result, value).unwrap();
-        assert_eq!(result, expected);
-    });
-}
-
-fn assert_expected_serialization<T: Floating>(value: T, expected: &str) {
-    let mut result = String::new();
-    dtoa_short::write(&mut result, value).unwrap();
-    assert_eq!(result, expected);
+    test_simple_number_percentage_f32(assert_expected_serialization);
 }
 
 #[test]
