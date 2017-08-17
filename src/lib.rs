@@ -7,23 +7,45 @@ extern crate dtoa;
 use std::fmt::Write;
 use std::{fmt, str};
 
+/// Format the given `value` into `dest` and return the notation it uses.
 #[inline]
-pub fn write<W: Write, V: Floating>(dest: W, value: V) -> fmt::Result {
+pub fn write<W: Write, V: Floating>(dest: W, value: V) -> DtoaResult {
     Floating::write(value, dest)
 }
 
+/// Form of the formatted floating-point number.
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub struct Notation {
+    /// Whether it contains a decimal point.
+    pub decimal_point: bool,
+    /// Whether it uses E-notation.
+    pub scientific: bool,
+}
+
+impl Notation {
+    fn integer() -> Self {
+        Notation {
+            decimal_point: false,
+            scientific: false,
+        }
+    }
+}
+
+/// Result of formatting the number.
+pub type DtoaResult = Result<Notation, fmt::Error>;
+
 pub trait Floating : dtoa::Floating {
-    fn write<W: Write>(self, dest: W) -> fmt::Result;
+    fn write<W: Write>(self, dest: W) -> DtoaResult;
 }
 
 impl Floating for f32 {
-    fn write<W: Write>(self, dest: W) -> fmt::Result {
+    fn write<W: Write>(self, dest: W) -> DtoaResult {
         write_with_prec(dest, self, 6)
     }
 }
 
 impl Floating for f64 {
-    fn write<W: Write>(self, dest: W) -> fmt::Result {
+    fn write<W: Write>(self, dest: W) -> DtoaResult {
         write_with_prec(dest, self, 15)
     }
 }
@@ -35,15 +57,16 @@ impl Floating for f64 {
 const BUFFER_SIZE: usize = 24;
 
 fn write_with_prec<W, V>(mut dest: W, value: V, prec: usize)
-    -> fmt::Result where W: Write, V: dtoa::Floating
+    -> DtoaResult where W: Write, V: dtoa::Floating
 {
     let mut buf = [b'\0'; BUFFER_SIZE + 8];
     let len = dtoa::write(&mut buf[1..], value).map_err(|_| fmt::Error)?;
-    let result = restrict_prec(&mut buf[0..len + 1], prec);
-    dest.write_str(str::from_utf8(result).unwrap())
+    let (result, notation) = restrict_prec(&mut buf[0..len + 1], prec);
+    dest.write_str(str::from_utf8(result).unwrap())?;
+    Ok(notation)
 }
 
-fn restrict_prec(buf: &mut [u8], prec: usize) -> &[u8] {
+fn restrict_prec(buf: &mut [u8], prec: usize) -> (&[u8], Notation) {
     let len = buf.len();
     debug_assert!(len <= BUFFER_SIZE, "dtoa may have changed its buffer size");
     // Put a leading zero to capture any carry.
@@ -77,7 +100,7 @@ fn restrict_prec(buf: &mut [u8], prec: usize) -> &[u8] {
     let prec_start = match prec_start {
         Some(i) => i,
         // If there is no non-zero digit at all, it is just zero.
-        None => return &buf[0..1],
+        None => return (&buf[0..1], Notation::integer()),
     };
     // Coefficient part ends at 'e' or the length.
     let coeff_end = pos_exp.unwrap_or(len);
@@ -144,7 +167,7 @@ fn restrict_prec(buf: &mut [u8], prec: usize) -> &[u8] {
         new_coeff_end
     };
     // Add back the sign and strip the leading zero.
-    if let Some(sign) = sign {
+    let result = if let Some(sign) = sign {
         if buf[1] == b'0' && buf[2] != b'.' {
             buf[1] = sign;
             &buf[1..real_end]
@@ -159,5 +182,11 @@ fn restrict_prec(buf: &mut [u8], prec: usize) -> &[u8] {
         } else {
             &buf[0..real_end]
         }
-    }
+    };
+    // Generate the notation info.
+    let notation = Notation {
+        decimal_point: pos_dot < new_coeff_end,
+        scientific: pos_exp.is_some(),
+    };
+    (result, notation)
 }
