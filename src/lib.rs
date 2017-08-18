@@ -9,7 +9,7 @@ use std::{fmt, str};
 
 /// Format the given `value` into `dest` and return the notation it uses.
 #[inline]
-pub fn write<W: Write, V: Floating>(dest: W, value: V) -> DtoaResult {
+pub fn write<W: Write, V: Floating>(dest: &mut W, value: V) -> DtoaResult {
     Floating::write(value, dest)
 }
 
@@ -35,17 +35,17 @@ impl Notation {
 pub type DtoaResult = Result<Notation, fmt::Error>;
 
 pub trait Floating : dtoa::Floating {
-    fn write<W: Write>(self, dest: W) -> DtoaResult;
+    fn write<W: Write>(self, dest: &mut W) -> DtoaResult;
 }
 
 impl Floating for f32 {
-    fn write<W: Write>(self, dest: W) -> DtoaResult {
+    fn write<W: Write>(self, dest: &mut W) -> DtoaResult {
         write_with_prec(dest, self, 6)
     }
 }
 
 impl Floating for f64 {
-    fn write<W: Write>(self, dest: W) -> DtoaResult {
+    fn write<W: Write>(self, dest: &mut W) -> DtoaResult {
         write_with_prec(dest, self, 15)
     }
 }
@@ -56,7 +56,7 @@ impl Floating for f64 {
 // 584674a70af74521ce40350dba776ea67cfcbaa7/src/dtoa.rs#L465
 const BUFFER_SIZE: usize = 24;
 
-fn write_with_prec<W, V>(mut dest: W, value: V, prec: usize)
+fn write_with_prec<W, V>(dest: &mut W, value: V, prec: usize)
     -> DtoaResult where W: Write, V: dtoa::Floating
 {
     let mut buf = [b'\0'; BUFFER_SIZE + 8];
