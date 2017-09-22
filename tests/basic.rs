@@ -132,4 +132,6 @@ fn exponent_part_handling() {
     assert_expected_serialization(-9.999999e30_f32, "-10e30");
     assert_expected_serialization(9.999999e-30_f32, "10e-30");
     assert_expected_serialization(-9.999999e-30_f32, "-10e-30");
+    // Regression test for assertion failure (https://bugzilla.mozilla.org/show_bug.cgi?id=1402419)
+    assert_expected_serialization(-8192e17_f32, "-819200000000000000000");
 }
