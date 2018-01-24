@@ -9,7 +9,7 @@ keywords = ["float"]
 categories = ["value-formatting"]
 license = "MPL-2.0"
 
-include = ["src/*.rs", "Cargo.toml"]
+include = ["src/*.rs", "Cargo.toml", "LICENSE"]
 
 [badges]
 travis-ci = { repository = "upsuper/dtoa-short" }
