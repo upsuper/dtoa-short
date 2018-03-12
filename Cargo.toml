@@ -19,4 +19,4 @@ codecov = { repository = "upsuper/dtoa-short" }
 dtoa = "0.4.1"
 
 [dev-dependencies]
-float-cmp = "0.3"
+float-cmp = "0.4"
