@@ -1,6 +1,6 @@
 [package]
 name = "dtoa-short"
-version = "0.3.2"
+version = "0.3.3"
 authors = ["Xidorn Quan <me@upsuper.org>"]
 
 description = "Serialize float number and truncate to certain precision"
