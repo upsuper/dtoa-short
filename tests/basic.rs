@@ -104,9 +104,8 @@ fn test_simple_number_percentage_f32<F: FnMut(f32, &str)>(mut test: F) {
 fn roundtrip_simple_numbers_percentage_dtoa_f32() {
     let mut count = 0;
     test_simple_number_percentage_f32(|value, expected| {
-        let mut result = Vec::new();
-        dtoa::write(&mut result, value).unwrap();
-        let result = String::from_utf8(result).unwrap();
+        let mut buf = dtoa::Buffer::new();
+        let result = String::from(buf.format(value));
         if result != expected {
             count += 1;
         }
