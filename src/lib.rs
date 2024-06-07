@@ -2,10 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#![no_std]
+
 extern crate dtoa;
 
-use std::fmt::Write;
-use std::{fmt, str};
+use core::fmt::Write;
+use core::{fmt, str};
 
 /// Format the given `value` into `dest` and return the notation it uses.
 #[inline]
@@ -58,11 +60,11 @@ where
     let mut buf = dtoa::Buffer::new();
     let str = buf.format_finite(value);
 
-    const SCRATCH_LEN: usize = std::mem::size_of::<dtoa::Buffer>() + 1;
+    const SCRATCH_LEN: usize = core::mem::size_of::<dtoa::Buffer>() + 1;
     let mut scratch = [b'\0'; SCRATCH_LEN];
     debug_assert!(str.len() < SCRATCH_LEN);
     unsafe {
-        std::ptr::copy_nonoverlapping(str.as_bytes().as_ptr(), scratch.as_mut_ptr().offset(1), str.len());
+        core::ptr::copy_nonoverlapping(str.as_bytes().as_ptr(), scratch.as_mut_ptr().offset(1), str.len());
     }
     let (result, notation) = restrict_prec(&mut scratch[0..str.len() + 1], prec);
     dest.write_str(if cfg!(debug_assertions) {
